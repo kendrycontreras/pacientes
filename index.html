@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pacientes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --google-blue: #1a73e8;
+            --google-gray: #5f6368;
+            --bg-color: #ffffff;
+            --item-hover: #f1f3f4;
+            --border-color: #dadce0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: #202124;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- PANTALLA DE LOGIN --- */
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+        }
+
+        .login-box h1 {
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        input:focus {
+            border: 2px solid var(--google-blue);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--google-blue);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 10px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* --- APP PRINCIPAL --- */
+        #app-screen {
+            display: none;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: #f1f3f4;
+            border-radius: 12px;
+            padding: 2px 12px;
+        }
+
+        .search-bar input {
+            background: transparent;
+            border: none;
+            padding: 10px;
+        }
+
+        /* --- LISTA DE PACIENTES --- */
+        .list-container {
+            padding-bottom: 20px;
+        }
+
+        .patient-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+        }
+
+        .patient-item:active {
+            background-color: var(--item-hover);
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            background-color: #1a73e8;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+
+        .patient-info {
+            flex-grow: 1;
+            border-bottom: 1px solid #f1f3f4;
+            padding-bottom: 12px;
+        }
+
+        .patient-name {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .patient-id {
+            font-size: 13px;
+            color: var(--google-gray);
+        }
+
+        /* --- PAGINACIÓN --- */
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 16px;
+            background: #fff;
+        }
+
+        .btn-page {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background: white;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+        }
+
+        .btn-page:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* --- MODAL --- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: white;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            background: white;
+        }
+
+        .info-row {
+            padding: 12px 20px;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: var(--google-blue);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            margin-top: 4px;
+        }
+
+        #error-msg { color: #d93025; font-size: 14px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h1>Bienvenido</h1>
+            <input type="text" id="cedula" placeholder="Cédula" inputmode="numeric">
+            <input type="password" id="password" placeholder="Contraseña">
+            <button class="btn-primary" onclick="login()">Entrar</button>
+            <div id="error-msg"></div>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        <header>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Buscar por ID, nombre o apellido..." oninput="resetPagingAndSearch()">
+            </div>
+        </header>
+
+        <div id="pacientesLista" class="list-container"></div>
+
+        <div class="pagination-controls">
+            <button class="btn-page" id="prevBtn" onclick="changePage(-1)">← Anterior</button>
+            <span id="pageInfo" style="font-size: 14px; color: var(--google-gray);">Página 1</span>
+            <button class="btn-page" id="nextBtn" onclick="changePage(1)">Siguiente →</button>
+        </div>
+    </div>
+
+    <div id="detalleModal" class="modal">
+        <div class="modal-header">
+            <button onclick="cerrarDetalle()" style="background:none; border:none; font-size:20px; cursor:pointer">✕</button>
+            <h2 style="font-size: 18px; margin: 0 0 0 20px; font-weight: 500;">Datos del Paciente</h2>
+        </div>
+        <div id="detalleInfo"></div>
+    </div>
+
+    <script>
+        const SB_URL = "https://gedeqtoowqevjvbjrenr.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlZGVxdG9vd3Fldmp2YmpyZW5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjAzODAsImV4cCI6MjA4NzMzNjM4MH0.fArL01V5XRQWpSxSDj1Ds9YKYcLBAxKLskc7osXcBpQ";
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        let currentPage = 0;
+        const pageSize = 100;
+
+        async function login() {
+            const userCedula = document.getElementById('cedula').value;
+            const userPass = document.getElementById('password').value;
+            const { data } = await _supabase.from('usuarios').select('*').eq('cedula', userCedula).eq('password', userPass).single();
+
+            if (data) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'block';
+                fetchData();
+            } else {
+                document.getElementById('error-msg').innerText = "Acceso denegado.";
+            }
+        }
+
+        async function fetchData() {
+            const txt = document.getElementById('searchInput').value;
+            const from = currentPage * pageSize;
+            const to = from + pageSize - 1;
+
+            let queryBuilder = _supabase
+                .from('pacientestotales')
+                .select('*', { count: 'exact' })
+                .order('id_historia', { ascending: false }) // Descendente por número de historia
+                .range(from, to);
+
+            if (txt.length > 0) {
+                queryBuilder = queryBuilder.or(`id_historia.eq.${isNaN(txt) ? -1 : txt},nombre1.ilike.${txt}%,apellido1.ilike.${txt}%`);
+            }
+
+            const { data, count, error } = await queryBuilder;
+
+            if (data) {
+                render(data);
+                updateControls(count);
+            }
+        }
+
+        function render(pacientes) {
+            const lista = document.getElementById('pacientesLista');
+            lista.innerHTML = '';
+            pacientes.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'patient-item';
+                div.onclick = () => verDetalle(p);
+                div.innerHTML = `
+                    <div class="avatar">${p.nombre1 ? p.nombre1[0] : '?'}</div>
+                    <div class="patient-info">
+                        <div class="patient-name">${p.nombre1 || ''} ${p.apellido1 || ''}</div>
+                        <div class="patient-id">Historia: ${p.id_historia}</div>
+                    </div>
+                `;
+                lista.appendChild(div);
+            });
+            window.scrollTo(0, 0);
+        }
+
+        function updateControls(total) {
+            document.getElementById('prevBtn').disabled = currentPage === 0;
+            document.getElementById('nextBtn').disabled = (currentPage + 1) * pageSize >= total;
+            document.getElementById('pageInfo').innerText = `Página ${currentPage + 1}`;
+        }
+
+        function changePage(step) {
+            currentPage += step;
+            fetchData();
+        }
+
+        function resetPagingAndSearch() {
+            currentPage = 0;
+            fetchData();
+        }
+
+        function verDetalle(p) {
+            const container = document.getElementById('detalleInfo');
+            container.innerHTML = '';
+            for (const [key, value] of Object.entries(p)) {
+                container.innerHTML += `
+                    <div class="info-row">
+                        <div class="info-label">${key.replace(/_/g, ' ')}</div>
+                        <div class="info-value">${value || '—'}</div>
+                    </div>`;
+            }
+            document.getElementById('detalleModal').style.display = 'block';
+        }
+
+        function cerrarDetalle() { document.getElementById('detalleModal').style.display = 'none'; }
+    </script>
+</body>
+</html>
