@@ -224,6 +224,10 @@
                 <input type="text" id="searchInput" placeholder="Buscar por ID, nombre o apellido..." oninput="resetPagingAndSearch()">
             </div>
         </header>
+        <div style="padding: 10px 16px; background: #e8f0fe; color: #1a73e8; font-weight: 600; font-size: 14px; border-bottom: 1px solid var(--border-color);">
+    Pacientes Activos: <span id="contadorActivos">Cargando...</span>
+</div>
+<div id="pacientesLista" class="list-container"></div>
 
         <div id="pacientesLista" class="list-container"></div>
 
@@ -259,6 +263,7 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-screen').style.display = 'block';
                 fetchData();
+                getContadorActivos();
             } else {
                 document.getElementById('error-msg').innerText = "Acceso denegado.";
             }
@@ -341,6 +346,18 @@
         }
 
         function cerrarDetalle() { document.getElementById('detalleModal').style.display = 'none'; }
+        async function getContadorActivos() {
+    const { count, error } = await _supabase
+        .from('pacientestotales')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ACTIVO');
+
+    if (!error) {
+        document.getElementById('contadorActivos').innerText = count;
+    } else {
+        document.getElementById('contadorActivos').innerText = '0';
+    }
+}
     </script>
 </body>
 </html>
