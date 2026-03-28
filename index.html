@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Pacientes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Ruda:wght@400..900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -13,8 +14,8 @@
             --bg-color: #ffffff;
             --item-hover: #f1f3f4;
             --border-color: #dadce0;
-            --status-active: #1e8e3e; /* Verde Google */
-            --status-inactive: #d93025; /* Rojo Google */
+            --status-active: #1e8e3e;
+            --status-inactive: #d93025;
         }
 
         body {
@@ -48,16 +49,28 @@
             margin-bottom: 24px;
         }
 
-        input {
+        .input-group {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--google-gray);
+        }
+
+        .input-group input {
             width: 100%;
-            padding: 13px 15px;
+            padding: 13px 15px 13px 40px;
             border: 1px solid var(--border-color);
             border-radius: 12px;
             font-size: 16px;
             box-sizing: border-box;
             outline: none;
             font-family: "Ruda", sans-serif;
-            margin: 10px 0px 0px 0px;
         }
 
         input:focus {
@@ -74,14 +87,12 @@
             font-size: 15px;
             font-weight: 500;
             cursor: pointer;
-            margin-top: 10px;
             font-family: "Ruda", sans-serif;
+            margin-top: 10px;
         }
 
         /* --- APP PRINCIPAL --- */
-        #app-screen {
-            display: none;
-        }
+        #app-screen { display: none; }
 
         header {
             position: sticky;
@@ -97,16 +108,18 @@
             align-items: center;
             background: #f1f3f4;
             border-radius: 12px;
-            padding: 2px 12px;
+            padding: 2px 15px;
         }
+
+        .search-bar i { color: var(--google-gray); }
 
         .search-bar input {
             background: transparent;
             border: none;
             padding: 10px;
+            width: 100%;
         }
 
-        /* --- FILTRO DINÁMICO --- */
         .filter-banner {
             padding: 12px 16px;
             background: #f8f9fa;
@@ -134,49 +147,38 @@
             border-color: var(--google-blue);
         }
 
-        /* --- LISTA DE PACIENTES --- */
-        .list-container {
-            padding-bottom: 20px;
-        }
-
+        /* --- LISTA --- */
         .patient-item {
             display: flex;
             align-items: center;
-            padding: 12px 16px;
+            padding: 15px 16px;
             cursor: pointer;
-        }
-
-        .patient-item:active {
-            background-color: var(--item-hover);
-        }
-
-        .patient-info {
-            flex-grow: 1;
             border-bottom: 1px solid #f1f3f4;
-            padding-bottom: 12px;
         }
 
-        .patient-name {
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 2px;
+        .patient-item:active { background-color: var(--item-hover); }
+
+        .patient-icon {
+            width: 40px;
+            height: 40px;
+            background: #e8f0fe;
+            color: var(--google-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 18px;
         }
 
-        .patient-id {
-            font-size: 13px;
-            color: var(--google-gray);
-        }
+        .patient-info { flex-grow: 1; }
 
-        /* --- CLASES DE COLOR PARA STATUS --- */
-        .status-text-activo {
-            color: var(--status-active);
-            font-weight: 700;
-        }
+        .patient-name { font-size: 16px; font-weight: 500; margin-bottom: 2px; }
 
-        .status-text-inactivo {
-            color: var(--status-inactive);
-            font-weight: 700;
-        }
+        .patient-id { font-size: 13px; color: var(--google-gray); }
+
+        .status-text-activo { color: var(--status-active); font-weight: 700; }
+        .status-text-inactivo { color: var(--status-inactive); font-weight: 700; }
 
         /* --- PAGINACIÓN --- */
         .pagination-controls {
@@ -184,7 +186,6 @@
             justify-content: space-between;
             align-items: center;
             padding: 20px 16px;
-            background: #fff;
         }
 
         .btn-page {
@@ -192,14 +193,7 @@
             border: 1px solid var(--border-color);
             background: white;
             border-radius: 8px;
-            font-size: 14px;
-            font-family: "Ruda", sans-serif;
             cursor: pointer;
-        }
-
-        .btn-page:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
 
         /* --- MODAL --- */
@@ -223,24 +217,6 @@
             background: white;
         }
 
-        .info-row {
-            padding: 12px 30px;
-            border-bottom: 1px solid #f8f9fa;
-        }
-
-        .info-label {
-            font-size: 11px;
-            color: var(--google-blue);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .info-value {
-            font-size: 16px;
-            margin-top: 4px;
-        }
-
         #error-msg { color: #d93025; font-size: 14px; margin-top: 10px; }
     </style>
 </head>
@@ -248,10 +224,19 @@
 
     <div id="login-screen">
         <div class="login-box">
+            <i class="fa-solid fa-hospital-user" style="font-size: 48px; color: var(--google-blue); margin-bottom: 15px;"></i>
             <h1>Bienvenido</h1>
-            <input type="text" id="cedula" placeholder="Cédula" inputmode="numeric">
-            <input type="password" id="password" placeholder="Contraseña">
-            <button class="btn-primary" onclick="login()">Entrar</button>
+            <div class="input-group">
+                <i class="fa-solid fa-id-card"></i>
+                <input type="text" id="cedula" placeholder="Cédula" inputmode="numeric">
+            </div>
+            <div class="input-group">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="password" placeholder="Contraseña">
+            </div>
+            <button class="btn-primary" onclick="login()">
+                <i class="fa-solid fa-right-to-bracket"></i> Entrar
+            </button>
             <div id="error-msg"></div>
         </div>
     </div>
@@ -259,28 +244,35 @@
     <div id="app-screen">
         <header>
             <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Buscar por ID, nombre o apellido..." oninput="resetPagingAndSearch()">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Buscar paciente..." oninput="resetPagingAndSearch()">
             </div>
         </header>
 
         <div class="filter-banner">
             <div id="statusBadge" onclick="toggleFilter()">
-                <span id="filterLabel">TODOS</span>: <span id="mainCounter">...</span>
+                <i class="fa-solid fa-filter"></i> <span id="filterLabel">TODOS</span>: <span id="mainCounter">...</span>
             </div>
         </div>
 
         <div id="pacientesLista" class="list-container"></div>
 
         <div class="pagination-controls">
-            <button class="btn-page" id="prevBtn" onclick="changePage(-1)">← Anterior</button>
-            <span id="pageInfo" style="font-size: 14px; color: var(--google-gray);">Página 1</span>
-            <button class="btn-page" id="nextBtn" onclick="changePage(1)">Siguiente →</button>
+            <button class="btn-page" id="prevBtn" onclick="changePage(-1)">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span id="pageInfo">Página 1</span>
+            <button class="btn-page" id="nextBtn" onclick="changePage(1)">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
         </div>
     </div>
 
     <div id="detalleModal" class="modal">
         <div class="modal-header">
-            <button onclick="cerrarDetalle()" style="background:none; border:none; font-size:20px; cursor:pointer">✕</button>
+            <button onclick="cerrarDetalle()" style="background:none; border:none; font-size:20px; cursor:pointer">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
             <h2 style="font-size: 18px; margin: 0 0 0 20px; font-weight: 500;">Datos del Paciente</h2>
         </div>
         <div id="detalleInfo"></div>
@@ -314,49 +306,24 @@
             const from = currentPage * pageSize;
             const to = from + pageSize - 1;
 
-            let queryBuilder = _supabase
-                .from('pacientestotales')
-                .select('*', { count: 'exact' })
-                .order('id_historia', { ascending: false })
-                .range(from, to);
+            let queryBuilder = _supabase.from('pacientestotales').select('*', { count: 'exact' }).order('id_historia', { ascending: false }).range(from, to);
 
-            // FILTRO DE STATUS
-            if (onlyActivos) {
-                queryBuilder = queryBuilder.eq('status', 'ACTIVO');
-            }
+            if (onlyActivos) queryBuilder = queryBuilder.eq('status', 'ACTIVO');
 
-            // BÚSQUEDA
             if (txt.length > 0) {
-                queryBuilder = queryBuilder.or(
-                  `id_historia.eq.${isNaN(txt) ? -1 : txt},` +
-                  `nombre1.ilike.${txt}%,` +
-                  `nombre2.ilike.${txt}%,` +
-                  `apellido1.ilike.${txt}%,` +
-                  `apellido2.ilike.${txt}%`
-                );
+                queryBuilder = queryBuilder.or(`id_historia.eq.${isNaN(txt) ? -1 : txt},nombre1.ilike.${txt}%,nombre2.ilike.${txt}%,apellido1.ilike.${txt}%,apellido2.ilike.${txt}%`);
             }
 
-            const { data, count, error } = await queryBuilder;
-
-            if (data) {
-                render(data);
-                updateControls(count);
-            }
+            const { data, count } = await queryBuilder;
+            if (data) { render(data); updateControls(count); }
         }
 
         function toggleFilter() {
             onlyActivos = !onlyActivos;
             const badge = document.getElementById('statusBadge');
             const label = document.getElementById('filterLabel');
-            
-            if (onlyActivos) {
-                badge.classList.add('active');
-                label.innerText = "ACTIVOS";
-            } else {
-                badge.classList.remove('active');
-                label.innerText = "TODOS";
-            }
-            
+            badge.classList.toggle('active', onlyActivos);
+            label.innerText = onlyActivos ? "ACTIVOS" : "TODOS";
             resetPagingAndSearch();
         }
 
@@ -364,27 +331,28 @@
             const lista = document.getElementById('pacientesLista');
             lista.innerHTML = '';
             pacientes.forEach(p => {
-                // DETERMINAR CLASE DE COLOR SEGÚN STATUS
-                let statusClass = '';
                 const statusValue = (p.status || '').toUpperCase();
+                let statusClass = statusValue === 'ACTIVO' ? 'status-text-activo' : (statusValue === 'INACTIVO' ? 'status-text-inactivo' : '');
                 
-                if (statusValue === 'ACTIVO') {
-                    statusClass = 'status-text-activo';
-                } else if (statusValue === 'INACTIVO') {
-                    statusClass = 'status-text-inactivo';
-                }
+                // Icono dinámico según el sexo o genérico
+                let icon = 'fa-user';
+                if(p.sexo === 'M') icon = 'fa-person';
+                if(p.sexo === 'F') icon = 'fa-person-dress';
 
                 const div = document.createElement('div');
                 div.className = 'patient-item';
                 div.onclick = () => verDetalle(p);
                 div.innerHTML = `
+                    <div class="patient-icon"><i class="fa-solid ${icon}"></i></div>
                     <div class="patient-info">
                         <div class="patient-name">${p.apellido1 || ''} ${p.apellido2 || ''} ${p.nombre1 || ''} ${p.nombre2 || ''}</div>
                         <div class="patient-id">
-                           ${p.id_historia} | ${p.telefono_contacto} |
-                           <span class="${statusClass}">${p.status || 'N/A'}</span>
+                            <i class="fa-solid fa-folder-open" style="font-size:11px"></i> ${p.id_historia} | 
+                            <i class="fa-solid fa-phone" style="font-size:11px"></i> ${p.telefono_contacto || 'S/N'} | 
+                            <span class="${statusClass}">${statusValue}</span>
                         </div>
                     </div>
+                    <i class="fa-solid fa-chevron-right" style="color:#dadce0"></i>
                 `;
                 lista.appendChild(div);
             });
@@ -398,31 +366,22 @@
             document.getElementById('pageInfo').innerText = `Página ${currentPage + 1}`;
         }
 
-        function changePage(step) {
-            currentPage += step;
-            fetchData();
-        }
-
-        function resetPagingAndSearch() {
-            currentPage = 0;
-            fetchData();
-        }
+        function changePage(step) { currentPage += step; fetchData(); }
+        function resetPagingAndSearch() { currentPage = 0; fetchData(); }
 
         function verDetalle(p) {
             const container = document.getElementById('detalleInfo');
             container.innerHTML = '';
             for (const [key, value] of Object.entries(p)) {
-                // También aplicamos color en el detalle modal por consistencia
                 let rowStyle = '';
                 if (key === 'status') {
                     if (value === 'ACTIVO') rowStyle = 'style="color: var(--status-active); font-weight: bold;"';
                     if (value === 'INACTIVO') rowStyle = 'style="color: var(--status-inactive); font-weight: bold;"';
                 }
-
                 container.innerHTML += `
-                    <div class="info-row">
-                        <div class="info-label">${key.replace(/_/g, ' ')}</div>
-                        <div class="info-value" ${rowStyle}>${value || '—'}</div>
+                    <div class="info-row" style="padding: 12px 30px; border-bottom: 1px solid #f8f9fa;">
+                        <div class="info-label" style="font-size: 11px; color: var(--google-blue); font-weight: 600; text-transform: uppercase;">${key.replace(/_/g, ' ')}</div>
+                        <div class="info-value" ${rowStyle} style="font-size: 16px; margin-top: 4px;">${value || '—'}</div>
                     </div>`;
             }
             document.getElementById('detalleModal').style.display = 'block';
