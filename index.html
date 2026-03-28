@@ -291,7 +291,13 @@
                 .range(from, to);
 
             if (txt.length > 0) {
-                queryBuilder = queryBuilder.or(`id_historia.eq.${isNaN(txt) ? -1 : txt},nombre1.ilike.${txt}%,apellido1.ilike.${txt}%`);
+                queryBuilder = queryBuilder.or(
+                  `id_historia.eq.${isNaN(txt) ? -1 : txt},` +
+                  `nombre1.ilike.${txt}%,` +
+                  `nombre2.ilike.${txt}%,` +
+                  `apellido1.ilike.${txt}%,` +
+                  `apellido2.ilike.${txt}%`
+                );
             }
 
             const { data, count, error } = await queryBuilder;
