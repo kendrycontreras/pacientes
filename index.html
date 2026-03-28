@@ -1,393 +1,377 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Pacientes</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Ruda:wght@400..900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --google-blue: #1a73e8;
-            --google-gray: #5f6368;
-            --bg-color: #ffffff;
-            --item-hover: #f1f3f4;
-            --border-color: #dadce0;
-            --status-active: #1e8e3e;
-            --status-inactive: #d93025;
-        }
-
-        body {
-            font-family: "Ruda", sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: #202124;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* --- PANTALLA DE LOGIN --- */
-        #login-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .login-box {
-            width: 100%;
-            max-width: 360px;
-            text-align: center;
-        }
-
-        .login-box h1 {
-            font-weight: 500;
-            margin-bottom: 24px;
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 12px;
-        }
-
-        .input-group i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--google-gray);
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 13px 15px 13px 40px;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            font-size: 16px;
-            box-sizing: border-box;
-            outline: none;
-            font-family: "Ruda", sans-serif;
-        }
-
-        input:focus {
-            border: 2px solid var(--google-blue);
-        }
-
-        .btn-primary {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--google-blue);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            font-family: "Ruda", sans-serif;
-            margin-top: 10px;
-        }
-
-        /* --- APP PRINCIPAL --- */
-        #app-screen { display: none; }
-
-        header {
-            position: sticky;
-            top: 0;
-            background: white;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            z-index: 100;
-        }
-
-        .search-bar {
-            display: flex;
-            align-items: center;
-            background: #f1f3f4;
-            border-radius: 12px;
-            padding: 2px 15px;
-        }
-
-        .search-bar i { color: var(--google-gray); }
-
-        .search-bar input {
-            background: transparent;
-            border: none;
-            padding: 10px;
-            width: 100%;
-        }
-
-        .filter-banner {
-            padding: 12px 16px;
-            background: #f8f9fa;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-        }
-
-        #statusBadge {
-            cursor: pointer;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            background: #f1f3f4;
-            color: var(--google-gray);
-            border: 1px solid var(--border-color);
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-
-        #statusBadge.active {
-            background: #e8f0fe;
-            color: var(--google-blue);
-            border-color: var(--google-blue);
-        }
-
-        /* --- LISTA --- */
-        .patient-item {
-            display: flex;
-            align-items: center;
-            padding: 15px 16px;
-            cursor: pointer;
-            border-bottom: 1px solid #f1f3f4;
-        }
-
-        .patient-item:active { background-color: var(--item-hover); }
-
-        .patient-icon {
-            width: 40px;
-            height: 40px;
-            background: #e8f0fe;
-            color: var(--google-blue);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            font-size: 18px;
-        }
-
-        .patient-info { flex-grow: 1; }
-
-        .patient-name { font-size: 16px; font-weight: 500; margin-bottom: 2px; }
-
-        .patient-id { font-size: 13px; color: var(--google-gray); }
-
-        .status-text-activo { color: var(--status-active); font-weight: 700; }
-        .status-text-inactivo { color: var(--status-inactive); font-weight: 700; }
-
-        /* --- PAGINACIÓN --- */
-        .pagination-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 16px;
-        }
-
-        .btn-page {
-            padding: 8px 16px;
-            border: 1px solid var(--border-color);
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        /* --- MODAL --- */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: white;
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            background: white;
-        }
-
-        #error-msg { color: #d93025; font-size: 14px; margin-top: 10px; }
-    </style>
-</head>
-<body>
-
-    <div id="login-screen">
-        <div class="login-box">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Gestión de Pacientes</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+      <link href="https://fonts.googleapis.com/css2?family=Ruda:wght@400..900&display=swap" rel="stylesheet">
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <style>
+         :root {
+         --google-blue: #1a73e8;
+         --google-gray: #5f6368;
+         --bg-color: #ffffff;
+         --item-hover: #f1f3f4;
+         --border-color: #dadce0;
+         --status-active: #1e8e3e;
+         --status-inactive: #d93025;
+         }
+         body {
+         font-family: "Ruda", sans-serif;
+         margin: 0;
+         padding: 0;
+         background-color: var(--bg-color);
+         color: #202124;
+         -webkit-tap-highlight-color: transparent;
+         }
+         /* --- PANTALLA DE LOGIN --- */
+         #login-screen {
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         justify-content: center;
+         height: 100vh;
+         padding: 20px;
+         box-sizing: border-box;
+         }
+         .login-box {
+         width: 100%;
+         max-width: 360px;
+         text-align: center;
+         }
+         .login-box h1 {
+         font-weight: 500;
+         margin-bottom: 24px;
+         }
+         .input-group {
+         position: relative;
+         margin-bottom: 12px;
+         }
+         .input-group i {
+         position: absolute;
+         left: 15px;
+         top: 50%;
+         transform: translateY(-50%);
+         color: var(--google-gray);
+         }
+         .input-group input {
+         width: 100%;
+         padding: 13px 15px 13px 40px;
+         border: 1px solid var(--border-color);
+         border-radius: 12px;
+         font-size: 16px;
+         box-sizing: border-box;
+         outline: none;
+         font-family: "Ruda", sans-serif;
+         }
+         input:focus {
+         border: 2px solid var(--google-blue);
+         }
+         .btn-primary {
+         width: 100%;
+         padding: 12px;
+         background-color: var(--google-blue);
+         color: white;
+         border: none;
+         border-radius: 12px;
+         font-size: 15px;
+         font-weight: 500;
+         cursor: pointer;
+         font-family: "Ruda", sans-serif;
+         margin-top: 10px;
+         }
+         /* --- APP PRINCIPAL --- */
+         #app-screen { display: none; }
+         header {
+         position: sticky;
+         top: 0;
+         background: white;
+         padding: 12px 16px;
+         border-bottom: 1px solid var(--border-color);
+         z-index: 100;
+         }
+         .search-bar {
+         display: flex;
+         align-items: center;
+         background: #f1f3f4;
+         border-radius: 12px;
+         padding: 2px 15px;
+         }
+         .search-bar i { color: var(--google-gray); }
+         .search-bar input {
+         background: transparent;
+         border: none;
+         padding: 10px;
+         width: 100%;
+         }
+         .filter-banner {
+         padding: 12px 16px;
+         background: #f8f9fa;
+         border-bottom: 1px solid var(--border-color);
+         display: flex;
+         align-items: center;
+         }
+         #statusBadge {
+         cursor: pointer;
+         padding: 8px 16px;
+         border-radius: 20px;
+         font-size: 13px;
+         font-weight: 600;
+         background: #f1f3f4;
+         color: var(--google-gray);
+         border: 1px solid var(--border-color);
+         transition: all 0.2s ease;
+         user-select: none;
+         }
+         #statusBadge.active {
+         background: #e8f0fe;
+         color: var(--google-blue);
+         border-color: var(--google-blue);
+         }
+         /* --- LISTA --- */
+         .patient-item {
+         display: flex;
+         align-items: center;
+         padding: 15px 16px;
+         cursor: pointer;
+         border-bottom: 1px solid #f1f3f4;
+         }
+         .patient-item:active { background-color: var(--item-hover); }
+         .patient-icon {
+         width: 40px;
+         height: 40px;
+         background: #e8f0fe;
+         color: var(--google-blue);
+         border-radius: 50%;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         margin-right: 15px;
+         font-size: 18px;
+         }
+         .patient-info { flex-grow: 1; }
+         .patient-name { font-size: 16px; font-weight: 500; margin-bottom: 2px; }
+         .patient-id { font-size: 13px; color: var(--google-gray); }
+         .status-text-activo { color: var(--status-active); font-weight: 700; }
+         .status-text-inactivo { color: var(--status-inactive); font-weight: 700; }
+         /* --- PAGINACIÓN --- */
+         .pagination-controls {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         padding: 20px 16px;
+         }
+         .btn-page {
+         padding: 8px 16px;
+         border: 1px solid var(--border-color);
+         background: white;
+         border-radius: 8px;
+         cursor: pointer;
+         }
+         /* --- MODAL --- */
+         .modal {
+         display: none;
+         position: fixed;
+         top: 0; left: 0;
+         width: 100%; height: 100%;
+         background: white;
+         z-index: 1000;
+         overflow-y: auto;
+         }
+         .modal-header {
+         padding: 15px;
+         display: flex;
+         align-items: center;
+         border-bottom: 1px solid var(--border-color);
+         position: sticky;
+         top: 0;
+         background: white;
+         }
+         #error-msg { color: #d93025; font-size: 14px; margin-top: 10px; }
+      </style>
+   </head>
+   <body>
+      <div id="login-screen">
+         <div class="login-box">
             <i class="fa-solid fa-hospital-user" style="font-size: 48px; color: var(--google-blue); margin-bottom: 15px;"></i>
             <h1>Bienvenido</h1>
             <div class="input-group">
-                <i class="fa-solid fa-id-card"></i>
-                <input type="text" id="cedula" placeholder="Cédula" inputmode="numeric">
+               <i class="fa-solid fa-id-card"></i>
+               <input type="text" id="cedula" placeholder="Cédula" inputmode="numeric">
             </div>
             <div class="input-group">
-                <i class="fa-solid fa-lock"></i>
-                <input type="password" id="password" placeholder="Contraseña">
+               <i class="fa-solid fa-lock"></i>
+               <input type="password" id="password" placeholder="Contraseña">
             </div>
             <button class="btn-primary" onclick="login()">
-                <i class="fa-solid fa-right-to-bracket"></i> Entrar
+            <i class="fa-solid fa-right-to-bracket"></i> Entrar
             </button>
             <div id="error-msg"></div>
-        </div>
-    </div>
-
-    <div id="app-screen">
-        <header>
+         </div>
+      </div>
+      <div id="app-screen">
+         <header>
             <div class="search-bar">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Buscar paciente..." oninput="resetPagingAndSearch()">
+               <i class="fa-solid fa-magnifying-glass"></i>
+               <input type="text" id="searchInput" placeholder="Buscar paciente..." oninput="resetPagingAndSearch()">
             </div>
-        </header>
-
-        <div class="filter-banner">
+         </header>
+         <div class="filter-banner">
             <div id="statusBadge" onclick="toggleFilter()">
-                <i class="fa-solid fa-filter"></i> <span id="filterLabel">TODOS</span>: <span id="mainCounter">...</span>
+               <i class="fa-solid fa-filter"></i> <span id="filterLabel">TODOS</span>: <span id="mainCounter">...</span>
             </div>
-        </div>
-
-        <div id="pacientesLista" class="list-container"></div>
-
-        <div class="pagination-controls">
+         </div>
+         <div id="pacientesLista" class="list-container"></div>
+         <div class="pagination-controls">
             <button class="btn-page" id="prevBtn" onclick="changePage(-1)">
-                <i class="fa-solid fa-chevron-left"></i>
+            <i class="fa-solid fa-chevron-left"></i>
             </button>
             <span id="pageInfo">Página 1</span>
             <button class="btn-page" id="nextBtn" onclick="changePage(1)">
-                <i class="fa-solid fa-chevron-right"></i>
+            <i class="fa-solid fa-chevron-right"></i>
             </button>
-        </div>
-    </div>
-
-    <div id="detalleModal" class="modal">
-        <div class="modal-header">
+         </div>
+      </div>
+      <div id="detalleModal" class="modal">
+         <div class="modal-header">
             <button onclick="cerrarDetalle()" style="background:none; border:none; font-size:20px; cursor:pointer">
-                <i class="fa-solid fa-arrow-left"></i>
+            <i class="fa-solid fa-arrow-left"></i>
             </button>
             <h2 style="font-size: 18px; margin: 0 0 0 20px; font-weight: 500;">Datos del Paciente</h2>
-        </div>
-        <div id="detalleInfo"></div>
-    </div>
-
-    <script>
-        const SB_URL = "https://gedeqtoowqevjvbjrenr.supabase.co";
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlZGVxdG9vd3Fldmp2YmpyZW5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjAzODAsImV4cCI6MjA4NzMzNjM4MH0.fArL01V5XRQWpSxSDj1Ds9YKYcLBAxKLskc7osXcBpQ";
-        const _supabase = supabase.createClient(SB_URL, SB_KEY);
-
-        let currentPage = 0;
-        const pageSize = 50;
-        let onlyActivos = false;
-
-        async function login() {
-            const userCedula = document.getElementById('cedula').value;
-            const userPass = document.getElementById('password').value;
-            const { data } = await _supabase.from('usuarios').select('*').eq('cedula', userCedula).eq('password', userPass).single();
-
-            if (data) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('app-screen').style.display = 'block';
-                fetchData();
-            } else {
-                document.getElementById('error-msg').innerText = "Acceso denegado.";
-            }
-        }
-
-        async function fetchData() {
-            const txt = document.getElementById('searchInput').value;
-            const from = currentPage * pageSize;
-            const to = from + pageSize - 1;
-
-            let queryBuilder = _supabase.from('pacientestotales').select('*', { count: 'exact' }).order('id_historia', { ascending: false }).range(from, to);
-
-            if (onlyActivos) queryBuilder = queryBuilder.eq('status', 'ACTIVO');
-
-            if (txt.length > 0) {
-                queryBuilder = queryBuilder.or(`id_historia.eq.${isNaN(txt) ? -1 : txt},nombre1.ilike.${txt}%,nombre2.ilike.${txt}%,apellido1.ilike.${txt}%,apellido2.ilike.${txt}%`);
-            }
-
-            const { data, count } = await queryBuilder;
-            if (data) { render(data); updateControls(count); }
-        }
-
-        function toggleFilter() {
-            onlyActivos = !onlyActivos;
-            const badge = document.getElementById('statusBadge');
-            const label = document.getElementById('filterLabel');
-            badge.classList.toggle('active', onlyActivos);
-            label.innerText = onlyActivos ? "ACTIVOS" : "TODOS";
-            resetPagingAndSearch();
-        }
-
-        function render(pacientes) {
-            const lista = document.getElementById('pacientesLista');
-            lista.innerHTML = '';
-            pacientes.forEach(p => {
-                const statusValue = (p.status || '').toUpperCase();
-                let statusClass = statusValue === 'ACTIVO' ? 'status-text-activo' : (statusValue === 'INACTIVO' ? 'status-text-inactivo' : '');
-                
-                // Icono dinámico según el sexo o genérico
-                let icon = 'fa-user';
-                if(p.sexo === 'M') icon = 'fa-person';
-                if(p.sexo === 'F') icon = 'fa-person-dress';
-
-                const div = document.createElement('div');
-                div.className = 'patient-item';
-                div.onclick = () => verDetalle(p);
-                div.innerHTML = `
-                    <div class="patient-icon"><i class="fa-solid ${icon}"></i></div>
-                    <div class="patient-info">
-                        <div class="patient-name">${p.apellido1 || ''} ${p.apellido2 || ''} ${p.nombre1 || ''} ${p.nombre2 || ''}</div>
-                        <div class="patient-id">
-                            <i class="fa-solid fa-folder-open" style="font-size:11px"></i> ${p.id_historia} | 
-                            <i class="fa-solid fa-phone" style="font-size:11px"></i> ${p.telefono_contacto || 'S/N'} | 
-                            <span class="${statusClass}">${statusValue}</span>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="color:#dadce0"></i>
-                `;
-                lista.appendChild(div);
-            });
-            window.scrollTo(0, 0);
-        }
-
-        function updateControls(total) {
-            document.getElementById('mainCounter').innerText = total;
-            document.getElementById('prevBtn').disabled = currentPage === 0;
-            document.getElementById('nextBtn').disabled = (currentPage + 1) * pageSize >= total;
-            document.getElementById('pageInfo').innerText = `Página ${currentPage + 1}`;
-        }
-
-        function changePage(step) { currentPage += step; fetchData(); }
-        function resetPagingAndSearch() { currentPage = 0; fetchData(); }
-
-        function verDetalle(p) {
-            const container = document.getElementById('detalleInfo');
-            container.innerHTML = '';
-            for (const [key, value] of Object.entries(p)) {
-                let rowStyle = '';
-                if (key === 'status') {
-                    if (value === 'ACTIVO') rowStyle = 'style="color: var(--status-active); font-weight: bold;"';
-                    if (value === 'INACTIVO') rowStyle = 'style="color: var(--status-inactive); font-weight: bold;"';
-                }
-                container.innerHTML += `
-                    <div class="info-row" style="padding: 12px 30px; border-bottom: 1px solid #f8f9fa;">
-                        <div class="info-label" style="font-size: 11px; color: var(--google-blue); font-weight: 600; text-transform: uppercase;">${key.replace(/_/g, ' ')}</div>
-                        <div class="info-value" ${rowStyle} style="font-size: 16px; margin-top: 4px;">${value || '—'}</div>
-                    </div>`;
-            }
-            document.getElementById('detalleModal').style.display = 'block';
-        }
-
-        function cerrarDetalle() { document.getElementById('detalleModal').style.display = 'none'; }
-    </script>
-</body>
+         </div>
+         <div id="detalleInfo"></div>
+      </div>
+      <script>
+         const SB_URL = "https://gedeqtoowqevjvbjrenr.supabase.co";
+         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlZGVxdG9vd3Fldmp2YmpyZW5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjAzODAsImV4cCI6MjA4NzMzNjM4MH0.fArL01V5XRQWpSxSDj1Ds9YKYcLBAxKLskc7osXcBpQ";
+         const _supabase = supabase.createClient(SB_URL, SB_KEY);
+         
+         let currentPage = 0;
+         const pageSize = 50;
+         let onlyActivos = false;
+         
+         async function login() {
+             const userCedula = document.getElementById('cedula').value;
+             const userPass = document.getElementById('password').value;
+             const { data } = await _supabase.from('usuarios').select('*').eq('cedula', userCedula).eq('password', userPass).single();
+         
+             if (data) {
+                 document.getElementById('login-screen').style.display = 'none';
+                 document.getElementById('app-screen').style.display = 'block';
+                 fetchData();
+             } else {
+                 document.getElementById('error-msg').innerText = "Acceso denegado.";
+             }
+         }
+         
+         async function fetchData() {
+             const txt = document.getElementById('searchInput').value;
+             const from = currentPage * pageSize;
+             const to = from + pageSize - 1;
+         
+             let queryBuilder = _supabase.from('pacientestotales').select('*', { count: 'exact' }).order('id_historia', { ascending: false }).range(from, to);
+         
+             if (onlyActivos) queryBuilder = queryBuilder.eq('status', 'ACTIVO');
+         
+             if (txt.length > 0) {
+                 queryBuilder = queryBuilder.or(`id_historia.eq.${isNaN(txt) ? -1 : txt},nombre1.ilike.${txt}%,nombre2.ilike.${txt}%,apellido1.ilike.${txt}%,apellido2.ilike.${txt}%`);
+             }
+         
+             const { data, count } = await queryBuilder;
+             if (data) { render(data); updateControls(count); }
+         }
+         
+         function toggleFilter() {
+             onlyActivos = !onlyActivos;
+             const badge = document.getElementById('statusBadge');
+             const label = document.getElementById('filterLabel');
+             badge.classList.toggle('active', onlyActivos);
+             label.innerText = onlyActivos ? "ACTIVOS" : "TODOS";
+             resetPagingAndSearch();
+         }
+         
+         function render(pacientes) {
+             const lista = document.getElementById('pacientesLista');
+             lista.innerHTML = '';
+             pacientes.forEach(p => {
+                 const statusValue = (p.status || '').toUpperCase();
+                 let statusClass = statusValue === 'ACTIVO' ? 'status-text-activo' : (statusValue === 'INACTIVO' ? 'status-text-inactivo' : '');
+                 
+                 // Icono dinámico según el sexo o genérico
+                 let icon = 'fa-user';
+                 if(p.sexo === 'M') icon = 'fa-person';
+                 if(p.sexo === 'F') icon = 'fa-person-dress';
+         
+                 const div = document.createElement('div');
+                 div.className = 'patient-item';
+                 div.onclick = () => verDetalle(p);
+                 div.innerHTML = `
+                     <div class="patient-icon"><i class="fa-solid ${icon}"></i></div>
+                     <div class="patient-info">
+                         <div class="patient-name">${p.apellido1 || ''} ${p.apellido2 || ''} ${p.nombre1 || ''} ${p.nombre2 || ''}</div>
+                         <div class="patient-id">
+                             <i class="fa-solid fa-folder-open" style="font-size:11px"></i> ${p.id_historia} | 
+                             <i class="fa-solid fa-phone" style="font-size:11px"></i> ${p.telefono_contacto || 'S/N'} | 
+                             <span class="${statusClass}">${statusValue}</span>
+                         </div>
+                     </div>
+                     <i class="fa-solid fa-chevron-right" style="color:#dadce0"></i>
+                 `;
+                 lista.appendChild(div);
+             });
+             window.scrollTo(0, 0);
+         }
+         
+         function updateControls(total) {
+             document.getElementById('mainCounter').innerText = total;
+             document.getElementById('prevBtn').disabled = currentPage === 0;
+             document.getElementById('nextBtn').disabled = (currentPage + 1) * pageSize >= total;
+             document.getElementById('pageInfo').innerText = `Página ${currentPage + 1}`;
+         }
+         
+         function changePage(step) { currentPage += step; fetchData(); }
+         function resetPagingAndSearch() { currentPage = 0; fetchData(); }
+         
+         function verDetalle(p) {
+         const container = document.getElementById('detalleInfo');
+         container.innerHTML = '';
+         
+         for (const [key, value] of Object.entries(p)) {
+         let displayValue = value || '—';
+         let rowStyle = '';
+         
+         // Estilo para el status
+         if (key === 'status') {
+             if (value === 'ACTIVO') rowStyle = 'style="color: var(--status-active); font-weight: bold;"';
+             if (value === 'INACTIVO') rowStyle = 'style="color: var(--status-inactive); font-weight: bold;"';
+         }
+         
+         // Lógica para el teléfono de contacto
+         if (key === 'telefono_contacto' && value) {
+             // Limpiamos el número (solo dígitos)
+             const cleanNumber = value.toString().replace(/\D/g, '');
+             
+             // IMPORTANTE: Se añade rel="noopener noreferrer" para evitar el error de conexión rechazada
+             displayValue = `
+                 <a href="https://wa.me/58${cleanNumber}" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style="color: #25D366; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">
+                     <i class="fa-brands fa-whatsapp"></i> ${value}
+                 </a>`;
+         }
+         
+         container.innerHTML += `
+             <div class="info-row" style="padding: 12px 30px; border-bottom: 1px solid #f8f9fa;">
+                 <div class="info-label" style="font-size: 11px; color: var(--google-blue); font-weight: 600; text-transform: uppercase;">${key.replace(/_/g, ' ')}</div>
+                 <div class="info-value" ${rowStyle} style="font-size: 16px; margin-top: 4px;">${displayValue}</div>
+             </div>`;
+         }
+         document.getElementById('detalleModal').style.display = 'block';
+         }
+         
+         function cerrarDetalle() { document.getElementById('detalleModal').style.display = 'none'; }
+      </script>
+   </body>
 </html>
