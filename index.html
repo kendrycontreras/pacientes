@@ -31,7 +31,7 @@
          flex-direction: column;
          align-items: center;
          justify-content: center;
-         height: 100vh;
+         height: 90vh;
          padding: 20px;
          box-sizing: border-box;
          }
@@ -91,19 +91,37 @@
          border-bottom: 1px solid var(--border-color);
          z-index: 100;
          }
+         /* --- CSS OPTIMIZADO PARA LA BARRA DE BÚSQUEDA --- */
          .search-bar {
          display: flex;
          align-items: center;
          background: #f1f3f4;
          border-radius: 12px;
          padding: 2px 15px;
+         transition: background-color 0.2s, box-shadow 0.2s, border 0.2s;
+         border: 1px solid transparent; /* Evita saltos de layout al enfocar */
          }
-         .search-bar i { color: var(--google-gray); }
+         /* Cuando el usuario hace clic en cualquier parte de la barra o el input */
+         .search-bar:focus-within {
+         background: #ffffff;
+         border: 1px solid var(--google-blue);
+         box-shadow: 0 1px 3px rgba(60, 64, 67, 0.1), 0 4px 8px rgba(60, 64, 67, 0.2);
+         }
+         .search-bar i { 
+         color: var(--google-gray);
+         width: 20px; /* Ancho fijo para que el spinner no desplace el texto */
+         text-align: center;
+         transition: color 0.2s;
+         }
          .search-bar input {
          background: transparent;
          border: none;
-         padding: 10px;
+         padding: 12px 10px;
          width: 100%;
+         font-family: "Ruda", sans-serif;
+         font-size: 16px;
+         outline: none; /* ELIMINA EL RECUADRO NEGRO/AZUL DEL NAVEGADOR */
+         color: #202124;
          }
          .filter-banner {
          padding: 12px 16px;
@@ -252,17 +270,45 @@
          let onlyActivos = false;
          
          async function login() {
-             const userCedula = document.getElementById('cedula').value;
-             const userPass = document.getElementById('password').value;
-             const { data } = await _supabase.from('usuarios').select('*').eq('cedula', userCedula).eq('password', userPass).single();
+         const btn = document.querySelector('.btn-primary'); // Seleccionamos el botón
+         const userCedula = document.getElementById('cedula').value;
+         const userPass = document.getElementById('password').value;
+         const errorMsg = document.getElementById('error-msg');
          
-             if (data) {
-                 document.getElementById('login-screen').style.display = 'none';
-                 document.getElementById('app-screen').style.display = 'block';
-                 fetchData();
-             } else {
-                 document.getElementById('error-msg').innerText = "Acceso denegado.";
-             }
+         // 1. Estado de carga: Deshabilitar y dar feedback visual
+         btn.disabled = true;
+         btn.style.opacity = "0.7";
+         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Entrando...';
+         errorMsg.innerText = ""; // Limpiar errores previos
+         
+         try {
+         const { data, error } = await _supabase
+             .from('usuarios')
+             .select('*')
+             .eq('cedula', userCedula)
+             .eq('password', userPass)
+             .single();
+         
+         if (data) {
+             document.getElementById('login-screen').style.display = 'none';
+             document.getElementById('app-screen').style.display = 'block';
+             fetchData();
+         } else {
+             errorMsg.innerText = "Acceso denegado.";
+             // 2. Restaurar botón si falla el login
+             resetLoginBtn(btn);
+         }
+         } catch (err) {
+         errorMsg.innerText = "Error de conexión.";
+         resetLoginBtn(btn);
+         }
+         }
+         
+         // Función auxiliar para restablecer el botón
+         function resetLoginBtn(btn) {
+         btn.disabled = false;
+         btn.style.opacity = "1";
+         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
          }
          
          async function fetchData() {
@@ -279,6 +325,13 @@
              }
          
              const { data, count } = await queryBuilder;
+         
+         // Restaurar el icono de lupa después de recibir datos
+         const searchIcon = document.querySelector('.search-bar i');
+         searchIcon.className = "fa-solid fa-magnifying-glass";
+         searchIcon.style.color = "var(--google-gray)";
+         
+         if (data) { render(data); updateControls(count); }
              if (data) { render(data); updateControls(count); }
          }
          
@@ -331,44 +384,87 @@
          }
          
          function changePage(step) { currentPage += step; fetchData(); }
-         function resetPagingAndSearch() { currentPage = 0; fetchData(); }
+         let debounceTimer;
+         
+         function resetPagingAndSearch() {
+         // 1. Feedback Inmediato: Cambiamos el icono por un spinner
+         const searchIcon = document.querySelector('.search-bar i');
+         searchIcon.className = "fa-solid fa-circle-notch fa-spin"; 
+         searchIcon.style.color = "var(--google-blue)";
+         
+         clearTimeout(debounceTimer);
+         
+         debounceTimer = setTimeout(() => {
+         currentPage = 0;
+         fetchData(); // Al terminar fetchData, debemos restaurar el icono
+         }, 250); 
+         }
          
          function verDetalle(p) {
          const container = document.getElementById('detalleInfo');
          container.innerHTML = '';
          
+         // Contenedor principal del detalle
+         const content = document.createElement('div');
+         content.style.padding = '20px';
+         
          for (const [key, value] of Object.entries(p)) {
-         let displayValue = value || '—';
-         let rowStyle = '';
+         let rowHtml = '';
+         const label = key.replace(/_/g, ' ').toUpperCase();
+         const cleanValue = value || '—';
          
-         // Estilo para el status
-         if (key === 'status') {
-             if (value === 'ACTIVO') rowStyle = 'style="color: var(--status-active); font-weight: bold;"';
-             if (value === 'INACTIVO') rowStyle = 'style="color: var(--status-inactive); font-weight: bold;"';
-         }
-         
-         // Lógica para el teléfono de contacto
+         // Lógica específica para TELÉFONO (Diseño Tipo Card de Acción)
          if (key === 'telefono_contacto' && value) {
-             // Limpiamos el número (solo dígitos)
-             const cleanNumber = value.toString().replace(/\D/g, '');
-             
-             // IMPORTANTE: Se añade rel="noopener noreferrer" para evitar el error de conexión rechazada
-             displayValue = `
-                 <a href="https://wa.me/58${cleanNumber}" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    style="color: #25D366; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">
-                     <i class="fa-brands fa-whatsapp"></i> ${value}
-                 </a>`;
+            const cleanPhone = value.toString().replace(/\D/g, '');
+            rowHtml = `
+                <div style="margin-bottom: 25px; background: #f8f9fa; border-radius: 16px; padding: 16px; border: 1px solid #e8eaed;">
+                    <div style="font-size: 11px; color: var(--google-blue); font-weight: 700; margin-bottom: 8px;">CONTACTO DIRECTO</div>
+                    <div style="font-size: 20px; font-weight: 500; margin-bottom: 15px; color: #202124;">${cleanValue}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <button onclick="copiarTexto('${cleanValue}', this)" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: white; border: 1px solid #dadce0; padding: 12px; border-radius: 10px; font-family: 'Ruda'; font-weight: 600; font-size: 14px; cursor: pointer;">
+                            <i class="fa-regular fa-copy"></i> Copiar
+                        </button>
+                        <a href="https://wa.me/58${cleanPhone}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: #25D366; color: white; text-decoration: none; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 14px;">
+                            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                        </a>
+                    </div>
+                </div>`;
+         } 
+         // Lógica para el resto de los campos
+         else {
+            let valStyle = 'color: #202124;';
+            if (key === 'status') {
+                valStyle = value === 'ACTIVO' ? 'color: var(--status-active); font-weight: 700;' : 'color: var(--status-inactive); font-weight: 700;';
+            }
+         
+            rowHtml = `
+                <div style="padding: 12px 10px; border-bottom: 1px solid #f1f3f4;">
+                    <div style="font-size: 11px; color: var(--google-gray); font-weight: 600;">${label}</div>
+                    <div style="font-size: 16px; margin-top: 4px; ${valStyle}">${cleanValue}</div>
+                </div>`;
+         }
+         content.innerHTML += rowHtml;
          }
          
-         container.innerHTML += `
-             <div class="info-row" style="padding: 12px 30px; border-bottom: 1px solid #f8f9fa;">
-                 <div class="info-label" style="font-size: 11px; color: var(--google-blue); font-weight: 600; text-transform: uppercase;">${key.replace(/_/g, ' ')}</div>
-                 <div class="info-value" ${rowStyle} style="font-size: 16px; margin-top: 4px;">${displayValue}</div>
-             </div>`;
-         }
+         container.appendChild(content);
          document.getElementById('detalleModal').style.display = 'block';
+         }
+         
+         // Función de copiado profesional con feedback visual en el botón
+         async function copiarTexto(texto, btn) {
+         try {
+         await navigator.clipboard.writeText(texto);
+         const originalContent = btn.innerHTML;
+         btn.innerHTML = '<i class="fa-solid fa-check" style="color: #1e8e3e"></i> Copiado';
+         btn.style.borderColor = '#1e8e3e';
+         
+         setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.style.borderColor = '#dadce0';
+         }, 2000);
+         } catch (err) {
+         console.error('Error al copiar', err);
+         }
          }
          
          function cerrarDetalle() { document.getElementById('detalleModal').style.display = 'none'; }
