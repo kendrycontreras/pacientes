@@ -123,21 +123,6 @@
         .patient-item:active {
             background-color: var(--item-hover);
         }
-
-        .avatar {
-            width: 45px;
-            height: 45px;
-            background-color: #1a73e8;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            margin-right: 16px;
-            flex-shrink: 0;
-        }
-
         .patient-info {
             flex-grow: 1;
             border-bottom: 1px solid #f1f3f4;
@@ -316,7 +301,6 @@
                 div.className = 'patient-item';
                 div.onclick = () => verDetalle(p);
                 div.innerHTML = `
-                    <div class="avatar">${p.nombre1 ? p.nombre1[0] : '?'}</div>
                     <div class="patient-info">
                         <div class="patient-name">${p.apellido1 || ''} ${p.apellido2 || ''} ${p.nombre1 || ''} ${p.nombre2 || ''}</div>
                         <div class="patient-id">Historia: ${p.id_historia}</div>
